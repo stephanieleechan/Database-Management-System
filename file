@@ -1,1 +1,37 @@
+Option Explicit
 
+Sub Macro1()
+'
+' Macro1 Macro
+'
+
+'
+    With ActiveSheet.ListObjects.Add(SourceType:=0, Source:=Array( _
+        "OLEDB;Provider=Microsoft.ACE.OLEDB.12.0;Password="""";User ID=Admin;Data Source=\\TONY-PC\Storage\Chn\CP212\Assign5\Students.accdb;Mode=" _
+        , _
+        "Share Deny Write;Extended Properties="""";Jet OLEDB:System database="""";Jet OLEDB:Registry Path="""";Jet OLEDB:Database Password="""";J" _
+        , _
+        "et OLEDB:Engine Type=6;Jet OLEDB:Database Locking Mode=0;Jet OLEDB:Global Partial Bulk Ops=2;Jet OLEDB:Global Bulk Transactions=" _
+        , _
+        "1;Jet OLEDB:New Database Password="""";Jet OLEDB:Create System Database=False;Jet OLEDB:Encrypt Database=False;Jet OLEDB:Don't Cop" _
+        , _
+        "y Locale on Compact=False;Jet OLEDB:Compact Without Replica Repair=False;Jet OLEDB:SFP=False;Jet OLEDB:Support Complex Data=Fals" _
+        , "e"), Destination:=Range("$G$2")).QueryTable
+        .CommandType = xlCmdTable
+        .CommandText = Array("Student Attendance Count")
+        .RowNumbers = False
+        .FillAdjacentFormulas = False
+        .PreserveFormatting = True
+        .RefreshOnFileOpen = False
+        .BackgroundQuery = True
+        .RefreshStyle = xlInsertDeleteCells
+        .SavePassword = False
+        .SaveData = True
+        .AdjustColumnWidth = True
+        .RefreshPeriod = 0
+        .PreserveColumnInfo = True
+        .SourceDataFile = "\\TONY-PC\Storage\Chn\CP212\Assign5\Students.accdb"
+        .ListObject.DisplayName = "Table_Students.accdb_1"
+        .Refresh BackgroundQuery:=False
+    End With
+End Sub
