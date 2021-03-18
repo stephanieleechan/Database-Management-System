@@ -1,2 +1,2 @@
-# Database-Management-System
-In Progress | SQL with Access, VBA with Excel 
+# Education-Sector-Database-Management-System
+SQL with Access, VBA with Excel 
