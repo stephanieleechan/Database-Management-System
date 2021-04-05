@@ -1,2 +1,2 @@
 # Education-Database-Management-System
-SQL with Access, VBA with Excel 
+SQL with MS Access, VBA with MS Excel, MS Word
