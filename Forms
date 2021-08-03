@@ -1,0 +1,467 @@
+'Add Students
+
+Option Explicit
+
+    Dim FirstName As String
+    Dim LastName As String
+    Dim EmailAddress As String
+    Dim StudentId As String
+    Dim Level As String
+    Dim DateOfBirth As String
+    Dim NumStud As Integer
+    
+Private Sub cmdDone_Click()
+
+    ProcessStudent
+    Unload frmAddStudents
+    
+End Sub
+
+Private Sub cmdNextStudent_Click() ' frmAddStudent
+
+    ProcessStudent
+    
+End Sub
+
+Sub ProcessStudent()
+
+    FirstName = txtFirstName.Text
+    LastName = txtLastName.Text
+    EmailAddress = txtEmailAddress.Text
+    StudentId = txtStudentId.Text
+    Level = txtLevel.Text
+    DateOfBirth = txtDateOfBirth.Text
+    
+    With wsAddStudents
+        .Range("A" & (NumStud + 2)).Value = FirstName
+        .Range("B" & (NumStud + 2)).Value = LastName
+        .Range("C" & (NumStud + 2)).Value = EmailAddress
+        .Range("D" & (NumStud + 2)).Value = StudentId
+        .Range("E" & (NumStud + 2)).Value = Level
+        .Range("F" & (NumStud + 2)).Value = DateOfBirth
+        .Columns("A:F").AutoFit
+    End With
+    NumStud = NumStud + 1
+    clearFields
+
+End Sub
+
+'Class Enrolments
+Private Sub cmdOk_Click()
+
+    Dim sqlStr As String
+    Dim cn As Object
+    Dim rs As Object
+    Dim i As Integer
+    Dim rngCourses As Range
+    Dim chosenCourseCode As String
+    Dim chosenTermCode As String
+    Dim chosenCourseId As String
+    Dim chosenCrn As String
+    Dim numSelected As Integer
+    
+    Set cn = CreateObject("ADODB.Connection")
+    Set rs = CreateObject("ADODB.Recordset")
+    
+    With cn
+        .ConnectionString = "Data Source = " & ThisWorkbook.Path & "\" & DATABASE
+        .Provider = "Microsoft.Ace.OLEDB.12.0;"
+        .Open
+    End With
+    
+    chosenTermCode = cboTermCode.Text
+    chosenCourseCode = cboCourseCode.Text
+    
+    'Determine the chosenCourseId from the chosenCourseCode
+    
+    sqlStr = "select [course id] as chosenCourseId from courses where [course code] = '" & chosenCourseCode & "'"
+    rs.Open sqlStr, cn
+    chosenCourseId = rs!chosenCourseId
+    rs.Close
+    
+    'Determine chosenCrn using chosenTermCode and chosenCourseId
+
+    sqlStr = "select crn as chosenCrn from crn where (termCode = " & chosenTermCode & ") and (courseId = " & chosenCourseId & ")"
+    rs.Open sqlStr, cn
+    chosenCrn = rs!chosenCrn
+    rs.Close
+
+    'Count the number of students who chose the chosenCourseiD (ChosenCrn)
+    
+    sqlStr = "select count(crn) as Total from enrolments where crn = " & chosenCrn
+    rs.Open sqlStr, cn
+    numSelected = rs!Total
+    rs.Close
+        
+    'Display crn, coursecode, coursetitle, numberofstudents
+    
+    sqlStr = "select crn.crn, courses.[course code], courses.[course title] from crn inner join courses on crn.courseid = courses.[course id]" ' where crn.crn = " & chosenCrn
+    rs.Open sqlStr, cn
+    Set rngCourses = wsClassEnrolments.Range("A3:D3")
+    
+    With wsClassEnrolments
+        .Cells.Clear
+        .Range("A1").Value = "Class Enrolments"
+        .Range("A1").Style = "Title"
+        .Range("A2").Value = "CRN"
+        .Range("A2").Font.Bold = True
+        .Range("B2").Value = "Course Code"
+        .Range("B2").Font.Bold = True
+        .Range("C2").Value = "Course Title"
+        .Range("C2").Font.Bold = True
+        .Range("D2").Value = "Number of Students"
+        .Range("D2").Font.Bold = True
+    End With
+    
+    i = 1
+    While Not rs.EOF
+        If rs.fields(0).Value = chosenCrn Then
+            rngCourses(i, 1).Value = rs.fields(0).Value
+            rngCourses(i, 2).Value = rs.fields(1).Value
+            rngCourses(i, 3).Value = rs.fields(2).Value
+            i = i + 1
+        End If
+        rs.movenext
+    Wend
+    
+    rs.Close
+    cn.Close
+    
+    rngCourses(i - 1, 4).Value = numSelected
+    
+    With wsClassEnrolments
+        .Range("A3:D3").HorizontalAlignment = xlLeft
+        .Range("A:D").Columns.AutoFit
+    End With
+    
+    MsgBox "Results displayed in Worksheet 'Class Enrolments'"
+    
+End Sub
+
+Private Sub UserForm_Activate()
+
+    cboTermCode.AddItem "202001"
+    cboTermCode.AddItem "202005"
+    cboTermCode.AddItem "202009"
+    cboTermCode.Text = "202001"
+    
+    cboCourseCode.AddItem "CP212"
+    cboCourseCode.AddItem "CP213"
+    cboCourseCode.AddItem "CP104"
+    cboCourseCode.AddItem "CP164"
+    cboCourseCode.AddItem "BU111"
+    cboCourseCode.AddItem "BU121"
+    cboCourseCode.Text = "CP212"
+    
+End Sub
+
+'Course Failures
+Private Sub cmdOk_Click()
+
+    Dim sqlStr As String
+    Dim cn As Object
+    Dim rs As Object
+    Dim i As Integer
+    Dim rngStudents As Range
+    Dim chosenCourseCode As String
+    Dim chosenTermCode As String
+    Dim chosenCourseId As String
+    Dim chosenCrn As String
+    
+    
+    Set cn = CreateObject("ADODB.Connection")
+    Set rs = CreateObject("ADODB.Recordset")
+    
+    With cn
+        .ConnectionString = "Data Source = " & ThisWorkbook.Path & "\" & DATABASE
+        .Provider = "Microsoft.Ace.OLEDB.12.0;"
+        .Open
+    End With
+    
+    chosenTermCode = lstTermCode.Text
+    chosenCourseCode = lstCourseCode.Text
+
+    sqlStr = "select Students.[Last Name],Students.[First Name],Students.StudentID," & _
+            "Grades.[Final Grade] from Students" & _
+            " inner join Grades on Students.StudentID = Grades.StudentID where grades.[final grade] < 50" '& _
+            '" inner join crn on grades.crn = crn.crn where crn.termcode = '202005'" & _
+            '" inner join courses on crn.courseid = courses.[course id] where courses.[course code] = 'CP212'"
+    
+    rs.Open sqlStr, cn
+    
+    Set rngStudents = wsCourseFailures.Range("A3:D100")
+    
+    With wsCourseFailures
+        .Cells.Clear
+        .Range("A1").Value = "Course Failures"
+        .Range("A1").Style = "Title"
+        .Range("A2").Value = "Last Name"
+        .Range("B2").Value = "First Name"
+        .Range("C2").Value = "Student ID"
+        .Range("D2").Value = "Grade"
+        .Range("A2:D2").Font.Bold = True
+    End With
+    i = 1
+    While Not rs.EOF
+        rngStudents(i, 1).Value = rs.fields(0).Value
+        rngStudents(i, 2).Value = rs.fields(1).Value
+        rngStudents(i, 3).Value = rs.fields(2).Value
+        rngStudents(i, 4).Value = rs.fields(3).Value
+        i = i + 1
+        rs.movenext
+    Wend
+    rs.Close
+    cn.Close
+    wsCourseFailures.Range("A:D").Columns.AutoFit
+    
+    MsgBox "Results displayed in worksheet  'Course Failures'"
+
+End Sub
+
+'Dashboard
+
+'-- Assemble Grades Report -------------------------------------------------------------------
+
+Private Sub cmdOk_Click()
+    
+    Dim objWord
+    Dim objDocx
+    Dim objSelection
+    Dim sqlStr As String
+    Dim cn As Object
+    Dim rs As Object
+    Dim i As Integer
+    Dim NumStud As Integer
+    Dim rngStudents As Range
+    Dim rngGrades As Range
+    Dim rngNames As Range
+    Dim chosenCourseCode As String
+    Dim chosenTermCode As String
+    Dim mean As Single
+    Dim median As Integer
+    Dim mode As Integer
+    Dim stdev As Double
+    Dim cht As Object
+    
+    chosenTermCode = cboTermCode.Text
+    chosenCourseCode = cboCourseCode.Text
+    
+    Set objWord = CreateObject("Word.Application")
+    Set objDocx = objWord.Documents.Add
+    
+    objWord.Visible = True
+    Set objSelection = objWord.Selection
+     
+     With objSelection
+         .typetext ("Grades Report")
+         .Style = "Title"
+         .typeparagraph
+         .Font.Bold = True
+         .typetext ("Course: " & chosenCourseCode & vbTab & "Term: " & chosenTermCode)
+     End With
+          
+     Set cn = CreateObject("ADODB.Connection")
+     Set rs = CreateObject("ADODB.Recordset")
+     
+     With cn
+         .ConnectionString = "Data Source = " & ThisWorkbook.Path & "\" & DATABASE
+         .Provider = "Microsoft.Ace.OLEDB.12.0;"
+         .Open
+     End With
+     
+     chosenTermCode = cboTermCode.Text
+     chosenCourseCode = cboCourseCode.Text
+    
+     sqlStr = "select Students.[First Name],Students.[Last Name],Grades.[Final Grade] from Students" & _
+             " inner join Grades on Students.StudentID = Grades.StudentID"
+             
+             ' & _
+             " inner join crn on grades.crn = crn.crn" & _
+             " inner join courses on crn.courseid = courses.[course id]" & _
+             " where (courses.[course code] = 'CP212') and (crn.termcode = '202005')"
+             
+             
+             '" inner join crn on grades.crn = crn.crn where crn.termcode = '202005'" & _
+             '" inner join courses on crn.courseid = courses.[course id] where courses.[course code] = 'CP212'"
+                 
+     
+     Set rngStudents = wsGradesReport.Range("A1:B100")
+     wsGradesReport.Cells.Clear
+     
+     objSelection.typeparagraph
+     
+     rs.Open sqlStr, cn
+     i = 1
+     While Not rs.EOF
+        With objSelection
+            .typetext (rs.fields(0).Value & " " & rs.fields(1).Value & vbTab & rs.fields(2).Value & vbNewLine)
+            rngStudents(i, 1).Value = rs.fields(0).Value & " " & rs.fields(1).Value
+            rngStudents(i, 2).Value = rs.fields(2).Value    ' grade
+        End With
+        i = i + 1
+        rs.movenext
+     Wend
+     rs.Close
+     cn.Close
+     
+     NumStud = i - 1
+     
+     Set rngNames = wsGradesReport.Range("A1:A" & (NumStud))
+     Set rngGrades = wsGradesReport.Range("B1:B" & (NumStud))
+         
+     wsGradesReport.Range("A:B").Columns.AutoFit
+     
+     With Application.WorksheetFunction
+        mean = .Average(rngGrades)
+        median = .median(rngGrades)
+        mode = .mode(rngGrades)
+        stdev = .stdev(rngGrades)
+     End With
+    
+     Debug.Print mean, median, mode, stdev
+     
+     With objSelection
+        .typetext ("Statistics")
+        .Style = "Title"
+        .typeparagraph
+        .Font.Bold = True
+        .typetext ("Mean = " & mean & vbNewLine)
+        .typetext ("Median = " & median & vbNewLine)
+        .typetext ("Mode = " & mode & vbNewLine)
+        .typetext ("Standard Deviation = " & stdev & vbNewLine)
+        .typetext ("THE CLASS AVERAGE WAS " & mean)
+        .typeparagraph
+        .typetext ("Final Grade")
+        .Style = "Title"
+     End With
+
+     objDocx.SaveAs (ThisWorkbook.Path & "\Grades Report.docx")
+    
+    
+    Set cht = wsGradesReport.Shapes.AddChart
+    With cht.Chart
+        '.Name = "Final Grade"
+        .SetSourceData Source:=rngGrades
+        .ChartType = xlColumnClustered
+        .HasLegend = False
+        '.FullSeriesCollection(2).XValues = rngNames
+    End With
+    
+    With cht.Chart.Axes(xlCategory)
+        .HasTitle = True
+        .AxisTitle.Text = "Students"
+    End With
+
+    With cht.Chart.Axes(xlValue)
+        .HasTitle = True
+        .AxisTitle.Text = "Grades"
+    End With
+
+    With cht.Chart.Parent
+         .Height = 325 ' resize
+         .Width = 800  ' resize
+         .Top = 250    ' reposition
+         .Left = 130   ' reposition
+    End With
+  
+    ' copy chart
+    cht.Chart.ChartArea.Copy
+  
+    ' paste chart
+    objSelection.Paste
+    
+    MsgBox "Word Document created."
+ 
+End Sub
+
+'--- Initialize comboboxes in form -----------------------------------------
+
+Private Sub UserForm_Activate()
+
+    cboTermCode.AddItem "202001"
+    cboTermCode.AddItem "202005"
+    cboTermCode.AddItem "202009"
+    cboTermCode.Text = "202001"
+    
+    cboCourseCode.AddItem "CP212"
+    cboCourseCode.AddItem "CP213"
+    cboCourseCode.AddItem "CP104"
+    cboCourseCode.AddItem "CP164"
+    cboCourseCode.AddItem "BU111"
+    cboCourseCode.AddItem "BU121"
+    cboCourseCode.Text = "CP212"
+    
+End Sub
+
+'Students By City
+Option Explicit
+
+Private Sub cmdDone_Click()
+
+    Unload frmStudentsByCity
+
+End Sub
+
+Private Sub cmdOk_Click()
+
+    Dim sqlStr As String
+    Dim cn As Object
+    Dim rs As Object
+    Dim i As Integer
+    Dim rngStudents As Range
+    Dim chosenCity As String
+    Dim numStudentsByCity As Integer
+    
+    Set cn = CreateObject("ADODB.Connection")
+    Set rs = CreateObject("ADODB.Recordset")
+    
+    chosenCity = cboCities.Text
+        
+    With cn
+        .ConnectionString = "Data Source = " & ThisWorkbook.Path & "\" & DATABASE
+        .Provider = "Microsoft.Ace.OLEDB.12.0;"
+        .Open
+    End With
+    
+    sqlStr = "select [first name] , [last name], address, city from students"
+    rs.Open sqlStr, cn
+    
+    wsStudentsByCity.Cells.Clear
+    
+    With wsStudentsByCity
+        .Range("A1").Value = "Student List"
+        .Range("A1").Style = "Title"
+        .Range("A2").Value = "Full Name"
+        .Range("B2").Value = "Address"
+        .Range("C2").Value = "City"
+        .Range("A2:D2").Font.Bold = True
+    End With
+    
+    Set rngStudents = wsStudentsByCity.Range("A3:D100")
+    
+    i = 1
+    While Not rs.EOF
+        If rs.fields(3).Value = chosenCity Then
+            rngStudents(i, 1).Value = rs.fields(0).Value & " " & rs.fields(1).Value
+            rngStudents(i, 2).Value = rs.fields(2).Value
+            rngStudents(i, 3).Value = rs.fields(3).Value
+            i = i + 1
+        End If
+        rs.movenext
+    Wend
+    rs.Close
+    cn.Close
+    wsStudentsByCity.Range("A:D").Columns.AutoFit
+    
+    numStudentsByCity = i - 1
+    MsgBox "There are " & numStudentsByCity & " students from " & chosenCity & "."
+    
+    With wsStudentsByCity
+        .Range("A" & (numStudentsByCity + 5)).Value = "There are " & numStudentsByCity & " students from " & chosenCity & "."
+    End With
+    
+End Sub
+
+
+
+
