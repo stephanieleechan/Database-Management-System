@@ -1,0 +1,225 @@
+Option Explicit
+
+Private Sub cmdAddStudent_Click()  ' in Dashboard code
+    
+    'Sheets.Add After:=Sheets(Sheets.Count)
+    'ActiveSheet.Name = "Add Students"
+    
+    frmAddStudent.Show
+    With ThisWorkbook.Worksheets("Add Students")
+        '.Columns("A:E").EntireColumn.AutoFit        .
+        .Range("A1").Value = "First Name"
+        .Range("B1").Value = "Last Name"
+        .Range("C1").Value = "Email Address"
+        .Range("D1").Value = "Student ID"
+        .Range("E1").Value = "Date of Birth"
+    End With
+    ActiveWorkbook.RefreshAll
+    clearFields
+    
+    
+End Sub
+
+Private Sub cmdAddStudents_Click()
+    
+    frmAddStudents.Show
+    'wsAddStudents.Cells.Clear
+    
+End Sub
+
+Private Sub cmdClassEnrolments_Click()
+    
+    frmClassEnrolments.Show
+    
+    
+End Sub
+
+
+
+Private Sub cmdCourseFailures_Click()
+
+    frmCourseFailures.Show
+    
+End Sub
+
+Private Sub cmdEnrolments_Click()
+
+    readEnrolments
+    writeEnrolments
+    
+End Sub
+
+Private Sub cmdExit_Click()
+
+    Unload frmDashboard
+    
+End Sub
+
+'-- Reads finalgrades.dat and stores the grades into an array ----------------------------------
+
+Private Sub cmdFinalGrades_Click()
+     
+    Dim Grades(1 To 100) As Integer                  'Array to store final grades
+    Dim filePath As String
+    Dim i As Integer
+    Dim NumStud As Integer
+    Dim temp As String
+    Dim tempArray() As String
+    
+    filePath = ThisWorkbook.Path & "\finalgrades.dat"
+    
+    i = 1
+    Open filePath For Input As #1
+    Do While Not EOF(1)
+        Line Input #1, temp
+        tempArray() = Split(temp, vbTab)
+        Grades(i) = tempArray(2)
+        i = i + 1
+    Loop
+    Close #1
+    NumStud = i - 1
+    
+    MsgBox NumStud & " grades stored in array Grades()"
+
+End Sub
+
+
+Private Sub cmdGradesReport_Click()
+
+    frmGradesReport.Show
+    
+End Sub
+
+'-- Imports data from import.dat ----------------------------------
+
+Private Sub cmdImportData_Click()
+
+    Dim Student() As String
+    Dim filePath As String
+    Dim i As Integer
+    Dim NumStud As Integer
+    Dim temp As String
+    
+    filePath = ThisWorkbook.Path & "\import.dat"
+    wsImportDat.Cells.Clear
+    
+    i = 1
+    Open filePath For Input As #1
+    Do While Not EOF(1)
+        Line Input #1, temp
+        Student() = Split(temp, ",")
+        wsImportDat.Range("A" & i & ":J" & i).Value = Student()
+        i = i + 1
+    Loop
+    Close #1
+    wsImportDat.Range("A:J").Columns.AutoFit
+    
+    NumStud = i - 1
+    
+    MsgBox NumStud & " students imported into Worksheet 'ImportDat'"
+    
+End Sub
+
+Private Sub cmdStJacobs_Click()
+
+    Dim sqlStr As String
+    Dim cn As Object
+    Dim rs As Object
+
+    Set cn = CreateObject("ADODB.Connection")
+    Set rs = CreateObject("ADODB.Recordset")
+    
+    With cn
+        .ConnectionString = "Data Source = " & ThisWorkbook.Path & "\" & DATABASE
+        .Provider = "Microsoft.Ace.OLEDB.12.0;"
+        .Open
+    End With
+    
+    sqlStr = "select count (*) as Total from students where city = 'st. jacobs'"
+    rs.Open sqlStr, cn
+    
+    MsgBox "The number of students in St. Jacobs is " & rs!Total & "."
+    
+    rs.Close
+    cn.Close
+    
+End Sub
+
+'----- Reads from Students.mdb and displays first name, last name, e-mail address, city -----------------------------------
+
+Private Sub cmdStudentList_Click()
+
+    Dim sqlStr As String
+    Dim cn As Object
+    Dim rs As Object
+    Dim i As Integer
+    Dim rngStudents As Range
+    Dim chosenCity As String
+    Dim NumStud As Integer
+    
+    Set cn = CreateObject("ADODB.Connection")
+    Set rs = CreateObject("ADODB.Recordset")
+    
+    With cn
+        .ConnectionString = "Data Source = " & ThisWorkbook.Path & "\" & DATABASE
+        .Provider = "Microsoft.Ace.OLEDB.12.0;"
+        .Open
+    End With
+    
+    sqlStr = "select [first name] , [last name], [e-mail address], city from students"
+    rs.Open sqlStr, cn
+    
+    wsStudentList.Cells.Clear
+
+    With wsStudentList
+        .Range("A1").Value = "Student List"
+        .Range("A1").Style = "Title"
+        .Range("A2").Value = "First Name"
+        .Range("B2").Value = "Last Name"
+        .Range("C2").Value = "E-mail Address"
+        .Range("D2").Value = "City"
+        .Range("A2:D2").Font.Bold = True
+    End With
+    
+    Set rngStudents = wsStudentList.Range("A3:D100")
+    
+    i = 1
+    While Not rs.EOF
+        rngStudents(i, 1).Value = rs.fields(0).Value
+        rngStudents(i, 2).Value = rs.fields(1).Value
+        rngStudents(i, 3).Value = rs.fields(2).Value
+        rngStudents(i, 4).Value = rs.fields(3).Value
+        i = i + 1
+        rs.movenext
+    Wend
+    rs.Close
+    cn.Close
+    wsStudentList.Range("A:D").Columns.AutoFit
+    
+    NumStud = i - 1
+    
+    MsgBox NumStud & " students displayed on Worksheet 'Student List'"
+    
+End Sub
+
+
+Private Sub cmdStudentsByCity_Click()
+
+    With frmStudentsByCity
+        .cboCities.AddItem "Cambridge"
+        .cboCities.AddItem "Kitchener"
+        .cboCities.AddItem "Mississauga"
+        .cboCities.AddItem "Paris"
+        .cboCities.AddItem "St. Jacobs"
+        .cboCities.AddItem "Sudbury"
+        .cboCities.AddItem "Tilverton"
+        .cboCities.AddItem "Toronto"
+        .cboCities.AddItem "Waterloo"
+        .cboCities.Text = "Toronto"
+        
+    End With
+    
+    frmStudentsByCity.Show
+
+End Sub
+
