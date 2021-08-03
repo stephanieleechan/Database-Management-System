@@ -1,0 +1,99 @@
+
+Option Explicit
+
+Global Const DATABASE = "students.mdb"
+Global numStudents As Integer
+Dim StudentId(1 To 100) As Long
+Dim crn(1 To 100) As Long
+Dim NumStud As Integer
+
+Sub Start()
+
+    frmDashboard.Show
+    
+End Sub
+
+Sub clearFields()
+
+    With frmAddStudents
+        .txtFirstName.Value = ""
+        .txtLastName.Value = ""
+        .txtEmailAddress.Value = ""
+        .txtStudentId.Value = ""
+        .txtLevel.Value = ""
+        .txtDateOfBirth.Value = ""
+        .txtFirstName.SetFocus
+    End With
+    
+End Sub
+
+Sub readEnrolments()
+
+    Dim Student() As String
+
+    Dim filePath As String
+    Dim i As Integer
+
+    Dim temp As String
+    
+    filePath = ThisWorkbook.Path & "\enrolments.dat"
+    
+    i = 1
+    Open filePath For Input As #1
+    Do While Not EOF(1)
+        Line Input #1, temp
+        Student() = Split(temp, vbTab)
+        StudentId(i) = Student(0)
+        crn(i) = Student(1)
+        i = i + 1
+    Loop
+    Close #1
+    NumStud = i - 1
+    
+    'Debug.Print numStud, studentId(1), crn(1)
+    
+End Sub
+
+Sub writeEnrolments()
+
+    Dim filePath As String
+    Dim sqlStr As String
+    Dim cn As Object
+    Dim rs As Object
+    Dim i As Integer
+    Dim accessTable As String
+    
+    filePath = ThisWorkbook.Path & "\" & DATABASE
+    
+    Set cn = CreateObject("ADODB.Connection")
+    Set rs = CreateObject("ADODB.Recordset")
+    
+    accessTable = "enrolments"
+    
+    With cn
+        .ConnectionString = "Data Source = " & filePath
+        .Provider = "Microsoft.Ace.OLEDB.12.0;"
+        .Open
+    End With
+    
+    sqlStr = "select * from " & accessTable
+    
+    rs.cursorType = 1
+    rs.lockType = 3
+    
+    rs.Open sqlStr, cn
+    
+    For i = 1 To NumStud
+        rs.addNew
+        rs("id") = i + 199
+        rs("studentid") = StudentId(i)
+        rs("crn") = crn(i)
+        rs.Update
+    Next i
+
+    rs.Close
+    cn.Close
+    
+    MsgBox NumStud & " records appended to Enrolments table."
+    
+End Sub
