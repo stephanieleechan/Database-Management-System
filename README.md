@@ -1,4 +1,4 @@
-# Student-Education-Database-(Data-Management-System)
+# Education-Database-(Student-Data-Management-System)
 SQL, VBA, MS Access, MS Excel
 
 
