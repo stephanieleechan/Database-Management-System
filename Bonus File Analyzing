@@ -1,0 +1,33 @@
+def file_analyze(fv):
+    text = fv.read()
+
+    u = 0
+    l = 0
+    d = 0
+    w = 0
+    r = 0
+    
+    for ch in text:
+        if ch.isupper():
+            u = u + 1
+    for ch in text:
+        if ch.islower():
+            l = l + 1
+    for ch in text:
+        if ch.isdigit():
+            d = d + 1
+    for i in range(0, len(text)):
+        if text[i] == " ":
+            w = w + 1
+    for ch in text:
+        r = (len(text)) - (u+l+d+w)
+        
+file_name = "Stephanie L.txt"
+
+fv = open(file_name, "r", encoding="utf-8")
+
+u,l,d,w,r = file_analyze(fv)
+
+fv.close()
+
+print(u,l,d,w,r)
