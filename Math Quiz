@@ -1,0 +1,24 @@
+def math_quiz():
+    from random import randint 
+    
+    number1 = randint(0,999)
+    number2 = randint(0,999)
+    correct_answer = number1 + number2
+    
+    print(' {:4}'.format(number1))
+    print('+{:4}'.format(number2))   
+    
+    print()
+    
+    user_answer = int(input('Answer: '))
+
+    print()
+    
+    if correct_answer == user_answer:
+        print('Congratulations, correct answer!')
+    else:
+        print('Incorrect - the answer should be: {}'.format(correct_answer))
+        
+    return 
+
+math_quiz()
