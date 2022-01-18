@@ -1,0 +1,21 @@
+def perfect_square(num):
+    if num < 0:
+        print()
+        print('You did not enter a positive integer')
+    else:
+        i = 1
+        
+        square = i * i 
+    
+        print()
+        
+        print('Perfect Squares below {} are: '.format(num), end = '')
+        
+        while square < num:
+            print(square, end = ', ')
+            i = i + 1
+            square = i * i
+            
+pos_int = int(input('Enter a positive integer: '))
+
+perfect_square(pos_int)
